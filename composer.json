@@ -1,0 +1,23 @@
+{
+    "name": "ronrademaker/release-builder",
+    "description": "Utility to create releases in Github",
+    "require": {
+        "symfony/console": "^3.0",
+        "knplabs/github-api": "^1.5"
+    },
+    "bin": [
+        "bin/build-release"
+    ],
+    "autoload": {
+        "classmap": [
+            "src/"
+        ]
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Ron Rademaker",
+            "email": "ron@connectholland.nl"
+        }
+    ]
+}
