@@ -2,7 +2,7 @@
     "name": "ronrademaker/release-builder",
     "description": "Utility to create releases in Github",
     "require": {
-        "symfony/console": "^3.0",
+        "symfony/console": "^2.7|^3.0",
         "knplabs/github-api": "^1.5",
         "funivan/php-tokenizer": "^0.1.1"
     },
