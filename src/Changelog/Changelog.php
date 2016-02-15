@@ -157,12 +157,14 @@ class Changelog
 
         foreach ($commits as $commit) {
             $changelog .= sprintf(
-                '* %s (#%d)%s',
+                '* %s (%s)%s',
                 $commit['commit']['message'],
                 $commit['sha'],
                 "\n"
             );
         }
+
+	return $changelog;
     }
 
 
