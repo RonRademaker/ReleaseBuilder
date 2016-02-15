@@ -173,7 +173,7 @@ class ReleaseCommand extends Command
                 'tag_name' => $this->version,
                 'target_commitish' => $this->branch,
                 'name' => 'Release ' . $this->version,
-                'body' => 'Released using the ReleaseBuiler',
+                'body' => 'Released using the ReleaseBuilder',
                 'draft' => false,
                 'prerelease' => strpbrk($this->version, '-') !== false
             ]
