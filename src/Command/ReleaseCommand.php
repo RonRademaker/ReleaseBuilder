@@ -17,7 +17,7 @@ class ReleaseCommand extends Command
     /**
      * The current version
      */
-    const VERSION = '0.1-dev';
+    const VERSION = '0.1.1-alpha2';
 
     /**
      * Configure the command
