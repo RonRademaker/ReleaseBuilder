@@ -3,7 +3,8 @@
     "description": "Utility to create releases in Github",
     "require": {
         "symfony/console": "^3.0",
-        "knplabs/github-api": "^1.5"
+        "knplabs/github-api": "^1.5",
+        "funivan/php-tokenizer": "^0.1.1"
     },
     "bin": [
         "bin/build-release"
@@ -19,5 +20,8 @@
             "name": "Ron Rademaker",
             "email": "ron@connectholland.nl"
         }
-    ]
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^5.2"
+    }
 }
