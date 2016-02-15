@@ -3,6 +3,7 @@
 namespace RonRademaker\ReleaseBuilder\Command;
 
 use Github\Client;
+use RonRademaker\ReleaseBuilder\Changelog\Changelog;
 use RonRademaker\ReleaseBuilder\Modifier\ConstantModifier;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -166,6 +167,10 @@ class ReleaseCommand extends Command
             $this->committer
         );
 
+        $changelog = new Changelog($client);
+
+        $stable = strpos($this->version, '-') === false;
+
         $client->api('repo')->releases()->create(
             $this->vendor,
             $this->repo,
@@ -173,9 +178,9 @@ class ReleaseCommand extends Command
                 'tag_name' => $this->version,
                 'target_commitish' => $this->branch,
                 'name' => 'Release ' . $this->version,
-                'body' => 'Released using the ReleaseBuilder',
+                'body' => $changelog->get($this->vendor, $this->repo, $this->branch, $stable),
                 'draft' => false,
-                'prerelease' => strpbrk($this->version, '-') !== false
+                'prerelease' => !$stable
             ]
         );
 
