@@ -8,6 +8,7 @@ use RonRademaker\ReleaseBuilder\Modifier\ConstantModifier;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ConfirmationQuestion;
 use Symfony\Component\Console\Question\Question;
@@ -104,9 +105,9 @@ class ReleaseCommand extends Command
             ->setDescription('Utility to create releases in Github')
             ->addArgument('repository', InputArgument::REQUIRED, 'The GITHUB repository to release (for example RonRademaker/ReleaseBuilder')
             ->addArgument('version', InputArgument::REQUIRED, 'The version to create (for example 1.0.0)')
-            ->addArgument('version-constant', InputArgument::REQUIRED, 'Class file and constant to set the version in (for example src/Command/ReleaseCommand.php::VERSION)')
             ->addArgument('development-version', InputArgument::REQUIRED, 'The version to set the released branch to after the release')
-            ->addArgument('branch', InputArgument::REQUIRED, 'The branch to release');
+            ->addOption('version-constant', NULL, InputOption::VALUE_OPTIONAL, 'Class file and constant to set the version in (for example src/Command/ReleaseCommand.php::VERSION)')
+            ->addOption('branch', NULL, InputOption::VALUE_OPTIONAL, 'The branch to release', 'master');
     }
 
     /**
@@ -127,17 +128,19 @@ class ReleaseCommand extends Command
         list($this->vendor, $this->repo) = explode('/', $repository);
         $this->version = $input->getArgument('version');
 
-        $versionConstant = $input->getArgument('version-constant');
-        if (!empty($versionConstant)) {
-            if (strpos($versionConstant, '::') === false) {
+        if ($input->hasOption('version-constant')) {
+            $versionConstant = $input->getOption('version-constant');
+            if (!empty($versionConstant)) {
+                if (strpos($versionConstant, '::') === false) {
 
+                }
+
+                list($this->versionFile, $this->versionConstant) = explode('::', $versionConstant);
             }
-
-            list($this->versionFile, $this->versionConstant) = explode('::', $versionConstant);
         }
 
         $this->devVersion = $input->getArgument('development-version');
-        $this->branch = $input->getArgument('branch');
+        $this->branch = $input->hasOption('branch') ? $input->getOption('branch') : 'master';
         $this->token = $this->retrieveToken($input, $output);
         $this->committer = $this->retrieveCommitter($input, $output);
 
@@ -154,18 +157,20 @@ class ReleaseCommand extends Command
         $client = new Client();
         $client->authenticate($this->token, null, Client::AUTH_URL_TOKEN);
 
-        $currentFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
-        $releaseContent = $this->updateVersionNumber($currentFile['content'], $this->version);
-        $client->api('repo')->contents()->update(
-            $this->vendor,
-            $this->repo,
-            $this->versionFile,
-            $releaseContent,
-            'Updated version number for release',
-            $currentFile['sha'],
-            $this->branch,
-            $this->committer
-        );
+        if (isset($this->versionFile)) {
+            $currentFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
+            $releaseContent = $this->updateVersionNumber($currentFile['content'], $this->version);
+            $client->api('repo')->contents()->update(
+                $this->vendor,
+                $this->repo,
+                $this->versionFile,
+                $releaseContent,
+                'Updated version number for release',
+                $currentFile['sha'],
+                $this->branch,
+                $this->committer
+            );
+        }
 
         $changelog = new Changelog($client);
 
@@ -184,18 +189,20 @@ class ReleaseCommand extends Command
             ]
         );
 
-        $releaseFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
-        $developmentContent = $this->updateVersionNumber($releaseFile['content'], $this->devVersion);
-        $client->api('repo')->contents()->update(
-            $this->vendor,
-            $this->repo,
-            $this->versionFile,
-            $developmentContent,
-            'Updated version number for development',
-            $releaseFile['sha'],
-            $this->branch,
-            $this->committer
-        );
+        if (isset($this->versionFile)) {
+            $releaseFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
+            $developmentContent = $this->updateVersionNumber($releaseFile['content'], $this->devVersion);
+            $client->api('repo')->contents()->update(
+                $this->vendor,
+                $this->repo,
+                $this->versionFile,
+                $developmentContent,
+                'Updated version number for development',
+                $releaseFile['sha'],
+                $this->branch,
+                $this->committer
+            );
+        }
     }
 
     /**
