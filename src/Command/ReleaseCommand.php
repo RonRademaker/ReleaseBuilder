@@ -24,7 +24,7 @@ class ReleaseCommand extends Command
     /**
      * The current version
      */
-    const VERSION = '0.4.0';
+    const VERSION = '0.4-dev';
 
     /**
      * Vendor or the repo to release
