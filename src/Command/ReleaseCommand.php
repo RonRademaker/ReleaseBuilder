@@ -3,6 +3,7 @@
 namespace RonRademaker\ReleaseBuilder\Command;
 
 use Github\Client;
+use Github\Exception\RuntimeException;
 use RonRademaker\ReleaseBuilder\Changelog\Changelog;
 use RonRademaker\ReleaseBuilder\Modifier\ConstantModifier;
 use Symfony\Component\Console\Command\Command;
@@ -121,8 +122,12 @@ class ReleaseCommand extends Command
         parent::initialize($input, $output);
 
         $repository = $input->getArgument('repository');
+        if (empty($repository)) {
+            return;
+        }
         if (strpos($repository, '/') === false) {
-
+            $output->write('<error>The repository should be written in <vendor>/<repository> form.</error>', true);
+            exit(1);
         }
 
         list($this->vendor, $this->repo) = explode('/', $repository);
@@ -132,7 +137,8 @@ class ReleaseCommand extends Command
             $versionConstant = $input->getOption('version-constant');
             if (!empty($versionConstant)) {
                 if (strpos($versionConstant, '::') === false) {
-
+                    $output->write('<error>The version constant should be written in <file>::<constant name> form.</error>', true);
+                    exit(1);
                 }
 
                 list($this->versionFile, $this->versionConstant) = explode('::', $versionConstant);
@@ -158,18 +164,7 @@ class ReleaseCommand extends Command
         $client->authenticate($this->token, null, Client::AUTH_URL_TOKEN);
 
         if (isset($this->versionFile)) {
-            $currentFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
-            $releaseContent = $this->updateVersionNumber($currentFile['content'], $this->version);
-            $client->api('repo')->contents()->update(
-                $this->vendor,
-                $this->repo,
-                $this->versionFile,
-                $releaseContent,
-                'Updated version number for release',
-                $currentFile['sha'],
-                $this->branch,
-                $this->committer
-            );
+            $this->setVersion($output, $client, $this->version, 'Updated version number for release');
         }
 
         $changelog = new Changelog($client);
@@ -190,19 +185,45 @@ class ReleaseCommand extends Command
         );
 
         if (isset($this->versionFile)) {
-            $releaseFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
-            $developmentContent = $this->updateVersionNumber($releaseFile['content'], $this->devVersion);
+            $this->setVersion($output, $client, $this->devVersion, 'Updated version number for development');
+        }
+    }
+
+    /**
+     * Updates the version in the configured version file
+     *
+     * @param OutputInterface $output
+     * @param Client $client
+     * @param string $version
+     * @param string $message
+     */
+    private function setVersion(OutputInterface $output, Client $client, $version, $message)
+    {
+        try {
+            $currentFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
+            $releaseContent = $this->updateVersionNumber($currentFile['content'], $version);
             $client->api('repo')->contents()->update(
                 $this->vendor,
                 $this->repo,
                 $this->versionFile,
-                $developmentContent,
-                'Updated version number for development',
-                $releaseFile['sha'],
+                $releaseContent,
+                $message,
+                $currentFile['sha'],
                 $this->branch,
                 $this->committer
             );
+        } catch (RuntimeException $exception) {
+            $output->write(
+                sprintf(
+                    '<error>Error updating %s: %s</error>',
+                    $this->versionFile,
+                    $exception->getMessage()
+                ),
+                true
+            );
+            exit(0);
         }
+
     }
 
     /**
