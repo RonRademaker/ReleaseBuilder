@@ -12,7 +12,7 @@ composer require ronrademaker/release-builder
 Will release 0.2.3 in ```RonRademaker/ReleaseBuilder``` based on current master and will update the ```VERSION``` constant in ```src/Command/ReleaseCommand.php```.
 
 ``` bash
-vendor/bin/build-release release:build RonRademaker/ReleaseBuilder 0.2.3 src/Command/ReleaseCommand.php::VERSION 0.2-dev master
+vendor/bin/build-release release:build RonRademaker/ReleaseBuilder 0.2.3 0.2-dev --version-constant=src/Command/ReleaseCommand.php::VERSION --branch=master
 ```
 
 # Generated changelog
