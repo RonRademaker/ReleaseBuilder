@@ -98,6 +98,13 @@ class ReleaseCommand extends Command
     private $committer;
 
     /**
+     * Dry run
+     *
+     * @var bool
+     */
+    private $dryRun;
+
+    /**
      * Configure the command
      */
     protected function configure()
@@ -108,7 +115,8 @@ class ReleaseCommand extends Command
             ->addArgument('version', InputArgument::REQUIRED, 'The version to create (for example 1.0.0)')
             ->addArgument('development-version', InputArgument::REQUIRED, 'The version to set the released branch to after the release')
             ->addOption('version-constant', NULL, InputOption::VALUE_OPTIONAL, 'Class file and constant to set the version in (for example src/Command/ReleaseCommand.php::VERSION)')
-            ->addOption('branch', NULL, InputOption::VALUE_OPTIONAL, 'The branch to release', 'master');
+            ->addOption('branch', NULL, InputOption::VALUE_OPTIONAL, 'The branch to release', 'master')
+            ->addOption('dry-run', NULL, InputOption::VALUE_NONE, 'Perform a dry run, i.e. only output what the command would do');
     }
 
     /**
@@ -147,6 +155,7 @@ class ReleaseCommand extends Command
 
         $this->devVersion = $input->getArgument('development-version');
         $this->branch = $input->hasOption('branch') ? $input->getOption('branch') : 'master';
+        $this->dryRun = $input->hasOption('dry-run') ? true : false;
         $this->token = $this->retrieveToken($input, $output);
         $this->committer = $this->retrieveCommitter($input, $output);
 
@@ -164,6 +173,15 @@ class ReleaseCommand extends Command
         $client->authenticate($this->token, null, Client::AUTH_URL_TOKEN);
 
         if (isset($this->versionFile)) {
+            $output->write(
+                sprintf(
+                    '<info>Update version in %s to %s</info>',
+                    $this->versionFile,
+                    $this->version
+                ),
+                true
+            );
+
             $this->setVersion($output, $client, $this->version, 'Updated version number for release');
         }
 
@@ -171,20 +189,39 @@ class ReleaseCommand extends Command
 
         $stable = strpos($this->version, '-') === false;
 
-        $client->api('repo')->releases()->create(
-            $this->vendor,
-            $this->repo,
+        $changes = $changelog->get($this->vendor, $this->repo, $this->branch, $stable);
+        $output->write(
             [
-                'tag_name' => $this->version,
-                'target_commitish' => $this->branch,
-                'name' => 'Release ' . $this->version,
-                'body' => $changelog->get($this->vendor, $this->repo, $this->branch, $stable),
-                'draft' => false,
-                'prerelease' => !$stable
-            ]
+                '<info>Changelog</info>',
+                sprintf('<comment>%s</comment>', $changes)
+            ],
+            true
         );
 
+        if ($this->dryRun === false) {
+            $client->api('repo')->releases()->create(
+                $this->vendor,
+                $this->repo,
+                [
+                    'tag_name' => $this->version,
+                    'target_commitish' => $this->branch,
+                    'name' => 'Release ' . $this->version,
+                    'body' => $changes,
+                    'draft' => false,
+                    'prerelease' => !$stable
+                ]
+            );
+        }
+
         if (isset($this->versionFile)) {
+            $output->write(
+                sprintf(
+                    '<info>Update version in %s to %s</info>',
+                    $this->versionFile,
+                    $this->version
+                ),
+                true
+            );
             $this->setVersion($output, $client, $this->devVersion, 'Updated version number for development');
         }
     }
@@ -202,16 +239,18 @@ class ReleaseCommand extends Command
         try {
             $currentFile = $client->api('repo')->contents()->show($this->vendor, $this->repo, $this->versionFile, $this->branch);
             $releaseContent = $this->updateVersionNumber($currentFile['content'], $version);
-            $client->api('repo')->contents()->update(
-                $this->vendor,
-                $this->repo,
-                $this->versionFile,
-                $releaseContent,
-                $message,
-                $currentFile['sha'],
-                $this->branch,
-                $this->committer
-            );
+            if ($this->dryRun === false) {
+                $client->api('repo')->contents()->update(
+                    $this->vendor,
+                    $this->repo,
+                    $this->versionFile,
+                    $releaseContent,
+                    $message,
+                    $currentFile['sha'],
+                    $this->branch,
+                    $this->committer
+                );
+            }
         } catch (RuntimeException $exception) {
             $output->write(
                 sprintf(
