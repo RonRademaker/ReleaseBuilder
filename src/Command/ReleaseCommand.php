@@ -191,10 +191,7 @@ class ReleaseCommand extends Command
 
         $changes = $changelog->get($this->vendor, $this->repo, $this->branch, $stable);
         $output->write(
-            [
-                '<info>Changelog</info>',
-                sprintf('<comment>%s</comment>', $changes)
-            ],
+            sprintf('<comment>%s</comment>', $changes),
             true
         );
 
@@ -218,7 +215,7 @@ class ReleaseCommand extends Command
                 sprintf(
                     '<info>Update version in %s to %s</info>',
                     $this->versionFile,
-                    $this->version
+                    $this->devVersion
                 ),
                 true
             );
