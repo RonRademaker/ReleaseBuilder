@@ -155,10 +155,13 @@ class ReleaseCommand extends Command
 
         $this->devVersion = $input->getArgument('development-version');
         $this->branch = $input->hasOption('branch') ? $input->getOption('branch') : 'master';
-        $this->dryRun = $input->hasOption('dry-run') ? true : false;
+        $this->dryRun = $input->getOption('dry-run') ? true : false;
         $this->token = $this->retrieveToken($input, $output);
         $this->committer = $this->retrieveCommitter($input, $output);
 
+        if ($this->dryRun === true) {
+            $output->write('<info>Dry Run: not really making a release.</info>', true);
+        }
     }
 
     /**
