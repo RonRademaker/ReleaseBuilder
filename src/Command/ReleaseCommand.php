@@ -105,6 +105,13 @@ class ReleaseCommand extends Command
     private $dryRun;
 
     /**
+     * Create a draft
+     *
+     * @var bool
+     */
+    private $draft;
+
+    /**
      * Configure the command
      */
     protected function configure()
@@ -116,7 +123,8 @@ class ReleaseCommand extends Command
             ->addArgument('development-version', InputArgument::REQUIRED, 'The version to set the released branch to after the release')
             ->addOption('version-constant', NULL, InputOption::VALUE_OPTIONAL, 'Class file and constant to set the version in (for example src/Command/ReleaseCommand.php::VERSION)')
             ->addOption('branch', NULL, InputOption::VALUE_OPTIONAL, 'The branch to release', 'master')
-            ->addOption('dry-run', NULL, InputOption::VALUE_NONE, 'Perform a dry run, i.e. only output what the command would do');
+            ->addOption('dry-run', NULL, InputOption::VALUE_NONE, 'Perform a dry run, i.e. only output what the command would do')
+            ->addOption('draft', NULL, InputOption::VALUE_NONE, 'Create a draft release');
     }
 
     /**
@@ -156,11 +164,16 @@ class ReleaseCommand extends Command
         $this->devVersion = $input->getArgument('development-version');
         $this->branch = $input->hasOption('branch') ? $input->getOption('branch') : 'master';
         $this->dryRun = $input->getOption('dry-run') ? true : false;
+        $this->draft = $input->getOption('draft') ? true : false;
         $this->token = $this->retrieveToken($input, $output);
         $this->committer = $this->retrieveCommitter($input, $output);
 
         if ($this->dryRun === true) {
             $output->write('<info>Dry Run: not really making a release.</info>', true);
+        }
+
+        if ($this->draft === true) {
+            $output->write('<info>Draft: creating a draft release.</info>', true);
         }
     }
 
@@ -207,7 +220,7 @@ class ReleaseCommand extends Command
                     'target_commitish' => $this->branch,
                     'name' => 'Release ' . $this->version,
                     'body' => $changes,
-                    'draft' => false,
+                    'draft' => $this->draft,
                     'prerelease' => !$stable
                 ]
             );
