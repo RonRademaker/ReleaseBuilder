@@ -41,7 +41,7 @@ class Changelog
     {
         $releases = $this->client->api('repo')->releases()->all($vendor, $repo);
         foreach ($releases as $release) {
-            if ($release['prerelease'] !== $stable) {
+            if ($release['prerelease'] !== $stable && $release['draft'] === false) {
                 return $this->getFromVersion($vendor, $repo, $branch, $release);
             }
         }
