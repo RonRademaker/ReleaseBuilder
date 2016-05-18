@@ -41,6 +41,7 @@ $finder = new Finder();
 $finder->files()
     ->ignoreVCS(true)
     ->name('*.php')
+    ->name('*.pem')
     ->notPath('tests')
     ->in($sourceDirectory)
     ->in($vendorDirectory);
