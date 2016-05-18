@@ -4,7 +4,7 @@ Utility to create releases in Github
 # Installation (system wide)
 
 ``` bash
-wget https://github.com/RonRademaker/ReleaseBuilder/tree/master/build/github-release-builder.phar -O github-release-builder
+wget https://raw.githubusercontent.com/RonRademaker/ReleaseBuilder/master/build/github-build-release.phar -O github-release-builder
 sudo chmod a+x github-release-builder
 sudo mv github-release-builder /usr/local/bin/github-release-builder
 ```
