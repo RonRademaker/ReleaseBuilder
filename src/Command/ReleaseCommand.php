@@ -265,14 +265,26 @@ class ReleaseCommand extends Command
                 );
             }
         } catch (RuntimeException $exception) {
-            $output->write(
-                sprintf(
-                    '<error>Error updating %s: %s</error>',
-                    $this->versionFile,
-                    $exception->getMessage()
-                ),
-                true
-            );
+            if ($exception->getMessage() === 'Not Found') {
+                $output->write(
+                    sprintf(
+                        '<error>Unable to set version in %s in %s/%s because that file does not exist in that repository</error>',
+                        $this->versionFile,
+                        $this->vendor,
+                        $this->repo
+                    ),
+                    true
+                );
+            } else {
+                $output->write(
+                    sprintf(
+                        '<error>Error updating %s: %s</error>',
+                        $this->versionFile,
+                        $exception->getMessage()
+                    ),
+                    true
+                );
+            }
             exit(0);
         }
 
